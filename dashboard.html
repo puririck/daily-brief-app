@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anusha's Command Center</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --bg: #080810;
+      --bg-card: #0f0f1a;
+      --bg-card2: #14142a;
+      --bg-hover: #1c1c30;
+      --border: #252540;
+      --border-light: #1e1e35;
+      --text: #e8e8f5;
+      --text-muted: #7070a0;
+      --text-dim: #4a4a70;
+      --accent: #7b68ee;
+      --accent-2: #4da6ff;
+      --accent-3: #ff6b9d;
+      --green: #23d18b;
+      --red: #ff5c5c;
+      --yellow: #f5a623;
+      --orange: #ff8c42;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: rgba(8, 8, 16, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header-title {
+      font-size: 17px; font-weight: 800;
+      background: linear-gradient(120deg, #fff 0%, var(--accent-2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px;
+    }
+    .header-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-time { font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .refresh-btn {
+      background: var(--accent); color: #fff;
+      border: none; padding: 8px 18px;
+      border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .refresh-btn:hover { background: #9580ff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(123,104,238,0.4); }
+    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .last-updated { font-size: 11px; color: var(--text-dim); }
+
+    /* ── STOCKS STRIP ── */
+    .stocks-section {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+    }
+    .stocks-label {
+      font-size: 10px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+    .stocks-strip {
+      display: flex; gap: 12px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      padding-bottom: 4px;
+    }
+    .stocks-strip::-webkit-scrollbar { height: 4px; }
+    .stocks-strip::-webkit-scrollbar-track { background: transparent; }
+    .stocks-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .stock-card {
+      min-width: 160px; flex-shrink: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: default;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .stock-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .stock-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .stock-card:hover::before { opacity: 1; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
+    .stock-header { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+    .stock-symbol { font-size: 14px; font-weight: 800; color: var(--text); }
+    .stock-name { font-size: 10px; color: var(--text-muted); }
+    .stock-price { font-size: 20px; font-weight: 700; color: var(--text); margin: 6px 0; letter-spacing: -0.5px; }
+    .stock-changes { display: flex; gap: 8px; }
+    .change-pill {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 4px 10px; border-radius: 6px; min-width: 56px;
+    }
+    .change-pill.up { background: rgba(35, 209, 139, 0.12); }
+    .change-pill.down { background: rgba(255, 92, 92, 0.12); }
+    .change-pill.neutral { background: rgba(112, 112, 160, 0.12); }
+    .change-val { font-size: 12px; font-weight: 700; }
+    .change-pill.up .change-val { color: var(--green); }
+    .change-pill.down .change-val { color: var(--red); }
+    .change-pill.neutral .change-val { color: var(--text-muted); }
+    .change-lbl { font-size: 9px; color: var(--text-dim); font-weight: 600; margin-top: 1px; }
+    .private-badge {
+      font-size: 10px; font-weight: 700;
+      background: rgba(245, 166, 35, 0.15);
+      color: var(--yellow);
+      padding: 3px 8px; border-radius: 4px;
+      border: 1px solid rgba(245, 166, 35, 0.2);
+    }
+
+    /* ── LAYOUT ── */
+    .main { padding: 24px 28px; max-width: 1800px; margin: 0 auto; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px; margin-top: 28px;
+    }
+    .section-header:first-child { margin-top: 0; }
+    .section-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .section-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .section-desc { font-size: 11px; color: var(--text-muted); }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .news-grid.wide { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+
+    /* ── NEWS COLUMN CARD ── */
+    .news-col {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .news-col-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .col-title { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; }
+    .col-src {
+      font-size: 10px; color: var(--text-muted);
+      background: var(--bg); padding: 2px 8px;
+      border-radius: 4px; border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .col-tag {
+      font-size: 9px; font-weight: 700; padding: 2px 7px;
+      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .news-items { flex: 1; }
+    .news-item {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-item:hover { background: var(--bg-hover); }
+    .news-item a { text-decoration: none; color: inherit; display: block; }
+    .news-item-title {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      line-height: 1.45; margin-bottom: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-item-desc {
+      font-size: 12px; color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-item-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 5px;
+    }
+    .news-item-date { font-size: 11px; color: var(--text-dim); }
+    .cat-badge {
+      font-size: 9px; font-weight: 700; padding: 2px 6px;
+      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .cat-models { background: rgba(123,104,238,0.15); color: #9b8af5; }
+    .cat-infra { background: rgba(77,166,255,0.15); color: #66b8ff; }
+    .cat-security { background: rgba(255,92,92,0.15); color: #ff7575; }
+    .cat-saas { background: rgba(255,140,66,0.15); color: #ffaa66; }
+
+    .news-loading {
+      padding: 32px 16px;
+      text-align: center; color: var(--text-muted); font-size: 12px;
+    }
+    .news-error {
+      padding: 20px 16px;
+      text-align: center; color: var(--red); font-size: 12px;
+    }
+    .news-error a { color: var(--accent); }
+    .news-empty { padding: 24px 16px; text-align: center; color: var(--text-dim); font-size: 12px; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 8px;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .loading-pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+    /* NPR World News spans full width */
+    .npr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+    }
+    .npr-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .npr-card-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .npr-num {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .npr-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .npr-body { padding: 12px 16px; }
+    .npr-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .npr-link { display: inline-block; margin-top: 10px; font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    .npr-link:hover { text-decoration: underline; }
+    .npr-date { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 24px 28px;
+      color: var(--text-dim);
+      font-size: 11px;
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Scrollbar global */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 640px) {
+      .header { padding: 12px 16px; }
+      .header-subtitle, .last-updated { display: none; }
+      .stocks-section, .main { padding-left: 16px; padding-right: 16px; }
+      .news-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">⚡</div>
+    <div>
+      <div class="header-title">Anusha's Command Center</div>
+      <div class="header-subtitle">AI · Security · Markets · World</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div>
+      <div class="header-time" id="clock">—</div>
+      <div class="last-updated" id="last-updated">Loading...</div>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">
+      <span id="refresh-icon">↻</span> Refresh
+    </button>
+  </div>
+</header>
+
+<!-- ── STOCKS ── -->
+<div class="stocks-section">
+  <div class="stocks-label">Market Watch — Cybersecurity & Networking</div>
+  <div class="stocks-strip" id="stocks-strip">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- AI Section -->
+  <div class="section-header">
+    <div class="section-icon" style="background: rgba(123,104,238,0.15);">🤖</div>
+    <div>
+      <div class="section-title">AI Intelligence</div>
+      <div class="section-desc">Foundational models · Infrastructure · AI security</div>
+    </div>
+    <div class="section-line"></div>
+  </div>
+  <div class="news-grid" id="ai-grid"><!-- JS --></div>
+
+  <!-- AI Daily Brief full-width row -->
+  <div class="news-grid wide" id="ai-brief-grid"><!-- JS --></div>
+
+  <!-- Security Section -->
+  <div class="section-header">
+    <div class="section-icon" style="background: rgba(255,92,92,0.15);">🛡️</div>
+    <div>
+      <div class="section-title">Security &amp; SaaS</div>
+      <div class="section-desc">InfoSec · Cyber threats · SaaS trends</div>
+    </div>
+    <div class="section-line"></div>
+  </div>
+  <div class="news-grid" id="security-grid"><!-- JS --></div>
+
+  <!-- Startups & PM Section -->
+  <div class="section-header">
+    <div class="section-icon" style="background: rgba(35,209,139,0.15);">🚀</div>
+    <div>
+      <div class="section-title">Startups &amp; Product</div>
+      <div class="section-desc">Startup funding · Product management · Growth</div>
+    </div>
+    <div class="section-line"></div>
+  </div>
+  <div class="news-grid" id="startup-grid"><!-- JS --></div>
+
+  <!-- World News Section -->
+  <div class="section-header">
+    <div class="section-icon" style="background: rgba(255,107,107,0.15);">🌍</div>
+    <div>
+      <div class="section-title">World News</div>
+      <div class="section-desc">Top stories · NPR Up First</div>
+    </div>
+    <div class="section-line"></div>
+  </div>
+  <div class="npr-grid" id="world-grid"><!-- JS --></div>
+
+</main>
+
+<footer class="footer">
+  <div>Sources: <a href="https://tldr.tech" target="_blank">TLDR Tech</a> · <a href="https://aidailybrief.beehiiv.com" target="_blank">AI Daily Brief</a> · <a href="https://npr.org" target="_blank">NPR</a></div>
+  <div style="margin-top:4px;">Stocks via Yahoo Finance · Netskope is privately held · Auto-refreshes every 30 min</div>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+// RSS → dedicated RSS-to-JSON service (no CORS issues)
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json';
+// Stocks → CORS proxies tried in order
+const STOCK_PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+const STOCKS = [
+  { symbol: 'ZS',   name: 'Zscaler',            color: '#7b68ee' },
+  { symbol: 'PANW', name: 'Palo Alto Networks',  color: '#4da6ff' },
+  { symbol: 'CRWD', name: 'CrowdStrike',         color: '#ff6b9d' },
+  { symbol: 'ANET', name: 'Arista Networks',     color: '#23d18b' },
+];
+
+const AI_FEEDS = [
+  { id:'tldr-ai',   title:'AI Models & Research',      src:'TLDR AI',         color:'#7b68ee', tag:'models',   tagLabel:'Models',   rss:'https://tldr.tech/api/rss/ai', limit:6 },
+];
+const AI_BRIEF_FEEDS = [
+  { id:'ai-brief',  title:'AI — TechCrunch',             src:'TechCrunch AI',   color:'#4da6ff', tag:'infra',    tagLabel:'All AI',   rss:'https://techcrunch.com/category/artificial-intelligence/feed/', limit:5 },
+];
+const SECURITY_FEEDS = [
+  { id:'infosec',   title:'Information Security',       src:'TLDR InfoSec',    color:'#ff5c5c', tag:'security', tagLabel:'Security', rss:'https://tldr.tech/api/rss/infosec', limit:7 },
+];
+const STARTUP_FEEDS = [
+  { id:'startups',  title:'Startups & Founders',         src:'TLDR Founders',   color:'#23d18b', tag:'startup',  tagLabel:'Startup',  rss:'https://tldr.tech/api/rss/founders', limit:6 },
+  { id:'product',   title:'Product Management',         src:'TLDR Product',    color:'#f5a623', tag:'pm',       tagLabel:'PM',       rss:'https://tldr.tech/api/rss/product', limit:6 },
+];
+const WORLD_RSS = 'https://feeds.npr.org/1001/rss.xml';
+
+// AI keyword categorisation
+const AI_CATS = {
+  models: ['gpt','claude','gemini','llm','model','openai','anthropic','google deepmind','mistral','llama','foundation','transformer','multimodal','benchmark','reasoning'],
+  infra:  ['nvidia','gpu','tpu','compute','cloud','inference','training','data center','chips','semiconductor','h100','hardware','edge','latency','throughput'],
+  security: ['jailbreak','prompt injection','adversarial','red team','safety','alignment','guardrail','bias','hallucin','exploit','attack','vulnerability','security'],
+};
+
+function categorizAI(title, desc) {
+  const text = (title + ' ' + (desc||'')).toLowerCase();
+  for (const [cat, kws] of Object.entries(AI_CATS)) {
+    if (kws.some(k => text.includes(k))) return cat;
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────
+//  UTILITIES
+// ─────────────────────────────────────────────
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr), now = new Date();
+  const diff = now - d;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
+  const days = Math.floor(diff / 86400000);
+  return days === 1 ? 'yesterday' : `${days}d ago`;
+}
+
+function stripHtml(html) {
+  if (!html) return '';
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  return (d.textContent || d.innerText || '').replace(/\s+/g,' ').trim();
+}
+
+function fmtPct(v) {
+  if (v == null || isNaN(v)) return 'N/A';
+  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+}
+
+function fmtPrice(v) {
+  if (v == null || isNaN(v)) return '—';
+  return `$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+}
+
+// ─────────────────────────────────────────────
+//  STOCK DATA
+// ─────────────────────────────────────────────
+async function fetchStock(symbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1mo&interval=1d&includePrePost=false`;
+  for (const proxyFn of STOCK_PROXIES) {
+    try {
+      const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const result = data?.chart?.result?.[0];
+      if (!result) continue;
+      let closes = result.indicators?.quote?.[0]?.close?.filter(v => v != null) || [];
+      if (closes.length < 2) continue;
+      const cur = closes.at(-1), prev = closes.at(-2), start = closes[0];
+      return {
+        price: cur,
+        day:   (cur - prev) / prev * 100,
+        month: (cur - start) / start * 100,
+      };
+    } catch { /* try next proxy */ }
+  }
+  return null;
+}
+
+function renderStockCard({ symbol, name, color }, data) {
+  const priceHtml = data ? fmtPrice(data.price) : '<span class="loading-pulse">—</span>';
+  const dayClass  = !data ? 'neutral' : (data.day  >= 0 ? 'up' : 'down');
+  const monClass  = !data ? 'neutral' : (data.month >= 0 ? 'up' : 'down');
+  const dayVal    = data ? fmtPct(data.day)   : '…';
+  const monVal    = data ? fmtPct(data.month) : '…';
+
+  return `
+    <div class="stock-card">
+      <div class="stock-header">
+        <span class="stock-symbol" style="color:${color}">${symbol}</span>
+      </div>
+      <div class="stock-name">${name}</div>
+      <div class="stock-price">${priceHtml}</div>
+      <div class="stock-changes">
+        <div class="change-pill ${dayClass}">
+          <span class="change-val">${dayVal}</span>
+          <span class="change-lbl">1 Day</span>
+        </div>
+        <div class="change-pill ${monClass}">
+          <span class="change-val">${monVal}</span>
+          <span class="change-lbl">1 Month</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderNetskope() {
+  return `
+    <div class="stock-card">
+      <div class="stock-header">
+        <span class="stock-symbol" style="color:#ff8c42">NKSP</span>
+      </div>
+      <div class="stock-name">Netskope</div>
+      <div class="stock-price">—</div>
+      <div class="stock-changes">
+        <span class="private-badge">PRIVATE CO.</span>
+      </div>
+    </div>`;
+}
+
+async function loadStocks() {
+  const strip = document.getElementById('stocks-strip');
+  // Skeleton
+  strip.innerHTML = STOCKS.map(s => `
+    <div class="stock-card loading-pulse">
+      <div class="stock-symbol" style="color:${s.color}">${s.symbol}</div>
+      <div class="stock-name">${s.name}</div>
+      <div class="stock-price">Loading…</div>
+    </div>`).join('') + renderNetskope();
+
+  const results = await Promise.all(STOCKS.map(s => fetchStock(s.symbol)));
+  strip.innerHTML = STOCKS.map((s, i) => renderStockCard(s, results[i])).join('') + renderNetskope();
+}
+
+// ─────────────────────────────────────────────
+//  RSS FEEDS  (via rss2json.com — no CORS issues)
+// ─────────────────────────────────────────────
+async function fetchRSS(url, limit = 6) {
+  try {
+    const endpoint = `${RSS2JSON}?rss_url=${encodeURIComponent(url)}`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(10000) });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'rss2json error');
+    return data.items.slice(0, limit).map(item => ({
+      title:   (item.title || '').trim(),
+      link:    item.link || item.guid || '#',
+      desc:    stripHtml(item.description || item.content || '').slice(0, 220),
+      pubDate: item.pubDate || '',
+    })).filter(i => i.title);
+  } catch (e) {
+    console.warn('RSS error', url, e);
+    return null;
+  }
+}
+
+// ── Render a standard news column card
+function renderNewsCol(feed, items) {
+  const tagColors = {
+    models:   'cat-models',
+    infra:    'cat-infra',
+    security: 'cat-security',
+    saas:     'cat-saas',
+    startup:  'cat-models',
+    pm:       'cat-saas',
+  };
+
+  let body = '';
+  if (items === null) {
+    body = `<div class="news-error">Failed to load — <a href="${feed.rss}" target="_blank">visit source ↗</a></div>`;
+  } else if (items.length === 0) {
+    body = `<div class="news-empty">No articles found</div>`;
+  } else {
+    body = items.map(item => {
+      const cat = (feed.tag === 'models') ? categorizAI(item.title, item.desc) : null;
+      const catBadge = cat ? `<span class="cat-badge ${tagColors[cat]||''}">${cat}</span>` : '';
+      return `
+        <div class="news-item">
+          <a href="${item.link || '#'}" target="_blank" rel="noopener noreferrer">
+            <div class="news-item-title">${escHtml(item.title)}</div>
+            ${item.desc ? `<div class="news-item-desc">${escHtml(item.desc)}</div>` : ''}
+            <div class="news-item-meta">
+              <span class="news-item-date">${timeAgo(item.pubDate)}</span>
+              ${catBadge}
+            </div>
+          </a>
+        </div>`;
+    }).join('');
+  }
+
+  return `
+    <div class="news-col">
+      <div class="news-col-head">
+        <div class="col-dot" style="background:${feed.color}"></div>
+        <div class="col-title">${feed.title}</div>
+        <div class="col-src">${feed.src}</div>
+      </div>
+      <div class="news-items">${body}</div>
+    </div>`;
+}
+
+function loadingColHtml(feed) {
+  return `
+    <div class="news-col">
+      <div class="news-col-head">
+        <div class="col-dot" style="background:${feed.color}"></div>
+        <div class="col-title">${feed.title}</div>
+        <div class="col-src">${feed.src}</div>
+      </div>
+      <div class="news-loading loading-pulse"><div class="spinner"></div>Loading…</div>
+    </div>`;
+}
+
+async function loadSection(gridId, feeds) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = feeds.map(loadingColHtml).join('');
+  const results = await Promise.all(feeds.map(f => fetchRSS(f.rss, f.limit)));
+  grid.innerHTML = feeds.map((f, i) => renderNewsCol(f, results[i])).join('');
+}
+
+// ── NPR World News
+async function loadWorldNews() {
+  const grid = document.getElementById('world-grid');
+  grid.innerHTML = `
+    <div class="npr-card loading-pulse">
+      <div class="npr-card-head"><div class="npr-num">…</div><div class="npr-title">Loading world news…</div></div>
+    </div>`.repeat(3);
+
+  const items = await fetchRSS(WORLD_RSS, 3);
+
+  if (!items || items.length === 0) {
+    grid.innerHTML = `<div class="news-error" style="grid-column:1/-1">Failed to load NPR news</div>`;
+    return;
+  }
+
+  grid.innerHTML = items.slice(0, 3).map((item, i) => `
+    <div class="npr-card">
+      <div class="npr-card-head">
+        <div class="npr-num">${i + 1}</div>
+        <div class="npr-title">${escHtml(item.title)}</div>
+      </div>
+      <div class="npr-body">
+        ${item.desc ? `<div class="npr-desc">${escHtml(item.desc.slice(0, 280))}</div>` : ''}
+        ${item.link && item.link !== '#' ? `<a class="npr-link" href="${item.link}" target="_blank" rel="noopener">Read on NPR ↗</a>` : ''}
+        <div class="npr-date">${timeAgo(item.pubDate)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────
+//  CLOCK
+// ─────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+  });
+}
+
+// ─────────────────────────────────────────────
+//  REFRESH ALL
+// ─────────────────────────────────────────────
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.style.animation = 'spin 0.7s linear infinite';
+  icon.style.display = 'inline-block';
+
+  await Promise.all([
+    loadStocks(),
+    loadSection('ai-grid', AI_FEEDS),
+    loadSection('ai-brief-grid', AI_BRIEF_FEEDS),
+    loadSection('security-grid', SECURITY_FEEDS),
+    loadSection('startup-grid', STARTUP_FEEDS),
+    loadWorldNews(),
+  ]);
+
+  document.getElementById('last-updated').textContent =
+    `Updated ${new Date().toLocaleTimeString()}`;
+  btn.disabled = false;
+  icon.style.animation = '';
+}
+
+function decodeEntities(s) {
+  const d = document.createElement('textarea');
+  d.innerHTML = String(s);
+  return d.value;
+}
+function escHtml(s) {
+  return decodeEntities(s)
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────
+updateClock();
+setInterval(updateClock, 30_000);
+refreshAll();
+setInterval(refreshAll, 30 * 60 * 1000); // auto-refresh every 30 min
+</script>
+</body>
+</html>
