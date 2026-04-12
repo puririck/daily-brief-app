@@ -302,7 +302,35 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
     </div>
   </div>
 
-  <!-- 15. ALTERNATIVES -->
+  <!-- 15. TROUBLESHOOTING -->
+  <div class="slide slide-warn">
+    <h3>when things go wrong</h3>
+    <h2>Vercel logs are your best friend.</h2>
+    <ul class="list" style="max-width:760px">
+      <li>
+        <span class="icon">📋</span>
+        <span><strong>Check Vercel logs first</strong> — <code>vercel.com → project → Logs</code><br/>
+        <span style="color:#666; font-size:0.9em">Shows full stdout from every run: stock fetches, article counts, errors. This is how we found the Resend 403 and the SMTP auth failure.</span></span>
+      </li>
+      <li>
+        <span class="icon red">🔑</span>
+        <span><strong>Wrong or missing env vars</strong> — most common cause of failures<br/>
+        <span style="color:#666; font-size:0.9em">Go to <code>Settings → Environment Variables</code>, double-check <code>EMAIL_TO</code> and <code>RESEND_API_KEY</code>. After changing any var, you must <strong>redeploy</strong> — Vercel bakes them in at build time.</span></span>
+      </li>
+      <li>
+        <span class="icon yellow">⚠️</span>
+        <span><strong>Function ran but no email arrived</strong> — check spam first<br/>
+        <span style="color:#666; font-size:0.9em">Gmail filters unknown senders. Add <code>onboarding@resend.dev</code> to contacts. Logs will show <code>✅ Email sent</code> even if it lands in spam.</span></span>
+      </li>
+      <li>
+        <span class="icon">🔁</span>
+        <span><strong>Test without waiting for cron</strong> — trigger manually anytime<br/>
+        <span style="color:#666; font-size:0.9em"><code>curl https://daily-brief-app.vercel.app/api/send_brief</code> — instant run, full logs appear immediately.</span></span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 17. ALTERNATIVES -->
   <div class="slide slide-dark">
     <h3>going further</h3>
     <h2>Swap any piece of the stack.</h2>
@@ -335,7 +363,7 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
     <p style="margin-top:20px; font-size:0.95rem; color:#555">Use cases for a DB: deduplicate articles · track read history · store user preferences · log every send</p>
   </div>
 
-  <!-- 16. END -->
+  <!-- 18. END -->
   <div class="slide slide-hero">
     <h1 style="font-size:2.5rem">Build something <span class="green">you actually use</span>.</h1>
     <p style="margin-top:20px; font-size:1.2rem">The best project is one that runs every morning<br/>and you never have to think about again.</p>
@@ -350,7 +378,7 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
 <!-- nav controls -->
 <div class="nav">
   <button onclick="prev()">← prev</button>
-  <span class="counter" id="counter">1 / 15</span>
+  <span class="counter" id="counter">1 / 16</span>
   <button onclick="next()">next →</button>
 </div>
 
