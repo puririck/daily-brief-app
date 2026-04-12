@@ -261,7 +261,28 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
     <p style="margin-top:20px; font-size:0.9rem; color:#555">Project lives in Google Drive → edits via Claude Code → git push → Vercel auto-deploys</p>
   </div>
 
-  <!-- 13. PIPELINE DIAGRAM -->
+  <!-- 13. MARKDOWN AS CONTEXT MEMORY -->
+  <div class="slide slide-dark">
+    <h3>the secret weapon</h3>
+    <h2>Markdown files are<br/><span class="green">the agent's memory.</span></h2>
+    <div class="two-col" style="max-width:860px;">
+      <div class="col">
+        <h4 class="yellow">What is a .md file?</h4>
+        <p>Plain text with simple formatting — <code>#</code> for headings, <code>-</code> for lists, <code>**bold**</code>. No special software needed. Readable by humans and AI equally.</p>
+        <p style="margin-top:10px">Every <code>.md</code> file in this project is a permanent note the agent reads at the start of every session.</p>
+      </div>
+      <div class="col">
+        <h4 class="green">Files in this project</h4>
+        <li><code>CLAUDE.md</code> — how the app works, rules for the agent</li>
+        <li><code>branding-guidelines.md</code> — all CSS, design decisions</li>
+        <li><code>SECURITY.md</code> — what secrets to never commit</li>
+        <li><code>HOW_TO_BUILD.md</code> — every decision and gotcha</li>
+      </div>
+    </div>
+    <p style="margin-top:20px; font-size:0.95rem; color:#aaa">Without these files, you repeat yourself every session.<br/>With them, the agent already knows your project — <span class="green">pick up exactly where you left off.</span></p>
+  </div>
+
+  <!-- 14. PIPELINE DIAGRAM -->
   <div class="slide slide-dark">
     <h3>the full picture</h3>
     <h2>Pipeline: every moving part</h2>
@@ -408,7 +429,7 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
 <!-- nav controls -->
 <div class="nav">
   <button onclick="prev()">← prev</button>
-  <span class="counter" id="counter">1 / 17</span>
+  <span class="counter" id="counter">1 / 18</span>
   <button onclick="next()">next →</button>
 </div>
 
