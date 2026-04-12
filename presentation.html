@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>How I Vibe-Coded a Daily Brief App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e8e8e8; overflow: hidden; height: 100vh; }
+
+  .deck { width: 100%; height: 100vh; position: relative; }
+  .slide { position: absolute; inset: 0; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 60px 80px; text-align: center; }
+  .slide.active { display: flex; }
+
+  /* slide variants */
+  .slide-hero { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); }
+  .slide-dark { background: #0f0f0f; }
+  .slide-accent { background: #0f1f0f; }
+  .slide-warn { background: #1a0f0f; }
+
+  h1 { font-size: 3rem; font-weight: 700; line-height: 1.1; margin-bottom: 16px; }
+  h2 { font-size: 2rem; font-weight: 600; margin-bottom: 28px; color: #fff; }
+  h3 { font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 0.1em; }
+  p  { font-size: 1.15rem; line-height: 1.6; color: #bbb; max-width: 760px; }
+
+  .tag { display: inline-block; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; padding: 3px 10px; font-size: 0.85rem; color: #888; margin: 4px; }
+  .green { color: #4ade80; }
+  .red   { color: #f87171; }
+  .yellow { color: #fbbf24; }
+  .blue  { color: #60a5fa; }
+
+  .list { text-align: left; max-width: 760px; width: 100%; }
+  .list li { font-size: 1.1rem; color: #ccc; padding: 10px 0; border-bottom: 1px solid #1a1a1a; line-height: 1.5; list-style: none; display: flex; gap: 12px; align-items: flex-start; }
+  .list li:last-child { border-bottom: none; }
+  .list li .icon { flex-shrink: 0; width: 24px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 900px; width: 100%; text-align: left; }
+  .col { background: #141414; border: 1px solid #222; border-radius: 8px; padding: 24px; }
+  .col h4 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .col p, .col li { font-size: 0.95rem; color: #999; line-height: 1.6; list-style: none; padding: 4px 0; }
+
+  code { font-family: 'Courier New', monospace; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; padding: 2px 7px; font-size: 0.9em; color: #a8d8a8; }
+  pre  { font-family: 'Courier New', monospace; background: #111; border: 1px solid #222; border-radius: 8px; padding: 20px 24px; font-size: 0.95rem; color: #a8d8a8; text-align: left; max-width: 760px; width: 100%; line-height: 1.6; }
+
+  .attempt { background: #141414; border-left: 3px solid #333; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 8px 0; text-align: left; max-width: 760px; width: 100%; }
+  .attempt.fail { border-left-color: #ef4444; }
+  .attempt.win  { border-left-color: #22c55e; }
+  .attempt h4   { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .attempt p    { font-size: 0.9rem; color: #888; }
+
+  .stat { font-size: 3.5rem; font-weight: 800; color: #fff; }
+  .stat-label { font-size: 1rem; color: #555; margin-top: 4px; }
+  .stats-row { display: flex; gap: 60px; justify-content: center; margin: 20px 0; }
+
+  /* nav */
+  .nav { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; z-index: 10; }
+  .nav button { background: #1a1a1a; border: 1px solid #2a2a2a; color: #888; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; }
+  .nav button:hover { background: #222; color: #fff; }
+  .counter { font-size: 0.85rem; color: #444; font-family: monospace; min-width: 50px; text-align: center; }
+  .progress { position: fixed; top: 0; left: 0; height: 2px; background: #22c55e; transition: width 0.3s; z-index: 10; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. TITLE -->
+  <div class="slide slide-hero active">
+    <h3>vibe coding for noobs</h3>
+    <h1>I Built a <span class="green">Daily Brief App</span><br/>Without Writing a Line of Code</h1>
+    <p style="margin-top:20px">AI · Security · Startups · Markets — delivered to your inbox every morning</p>
+    <div style="margin-top:32px">
+      <span class="tag">Python</span><span class="tag">Vercel</span><span class="tag">Resend</span><span class="tag">GitHub</span><span class="tag">Claude Code</span>
+    </div>
+  </div>
+
+  <!-- 2. WHAT IS VIBE CODING -->
+  <div class="slide slide-dark">
+    <h3>what is vibe coding?</h3>
+    <h2>You describe what you want.<br/>The AI writes the code.</h2>
+    <p>You don't need to know Python. You don't need to know how RSS works.<br/>You just need to know what you want to build — and keep iterating.</p>
+    <div style="margin-top:36px; display:flex; gap:40px;">
+      <div style="text-align:center"><div class="stat">0</div><div class="stat-label">lines written manually</div></div>
+      <div style="text-align:center"><div class="stat green">~4h</div><div class="stat-label">start to deployed app</div></div>
+      <div style="text-align:center"><div class="stat blue">100%</div><div class="stat-label">stdlib, no pip installs</div></div>
+    </div>
+  </div>
+
+  <!-- 3. WHAT IT DOES -->
+  <div class="slide slide-dark">
+    <h3>the app</h3>
+    <h2>One script. Every morning.</h2>
+    <ul class="list">
+      <li><span class="icon">📈</span><span>Fetches live stock prices for 5 cybersecurity tickers from Yahoo Finance</span></li>
+      <li><span class="icon">📰</span><span>Pulls headlines from TLDR AI, TLDR Infosec, TLDR Startups, TLDR Product</span></li>
+      <li><span class="icon">🤖</span><span>Scrapes the latest AI Daily Brief post from beehiiv</span></li>
+      <li><span class="icon">🌍</span><span>Grabs NPR Up First stories from RSS</span></li>
+      <li><span class="icon">✉️</span><span>Builds a dark-theme HTML email and sends it via API</span></li>
+    </ul>
+  </div>
+
+  <!-- 4. THE STACK -->
+  <div class="slide slide-dark">
+    <h3>the stack</h3>
+    <h2>Intentionally boring.</h2>
+    <div class="two-col">
+      <div class="col">
+        <h4 class="green">What we used</h4>
+        <li>Python (stdlib only — no pip)</li>
+        <li>Vercel (serverless hosting)</li>
+        <li>Resend (email API)</li>
+        <li>GitHub (source + auto-deploy)</li>
+        <li>Claude Code (coding agent)</li>
+      </div>
+      <div class="col">
+        <h4 class="yellow">Why stdlib only?</h4>
+        <p>Every third-party package is a potential deployment failure. <code>urllib</code>, <code>json</code>, and <code>xml</code> are already on every Python runtime — including Vercel's. Zero setup, zero version conflicts.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. FEED PROBLEM -->
+  <div class="slide slide-warn">
+    <h3>lesson 1: rss feeds break</h3>
+    <h2>The AI Daily Brief RSS<br/><span class="red">returned malformed XML.</span></h2>
+    <div class="attempt fail">
+      <h4>❌ Tried: <code>https://aidailybrief.beehiiv.com/feed</code></h4>
+      <p>RSS parse error: not well-formed (invalid token): line 108, column 66. Every single run.</p>
+    </div>
+    <div class="attempt win" style="margin-top:8px">
+      <h4>✅ Fixed: Scrape <code>/archive</code> instead</h4>
+      <p>The archive page embeds a <code>window.__remixContext</code> JSON blob with all post slugs and dates. Fetch the latest post, extract <code>&lt;p&gt;</code> tags. Problem gone.</p>
+    </div>
+  </div>
+
+  <!-- 6. EMAIL PROBLEM -->
+  <div class="slide slide-warn">
+    <h3>lesson 2: gmail is hard to automate</h3>
+    <h2>Three attempts to send an email.</h2>
+    <div class="attempt fail">
+      <h4>❌ Attempt 1 &amp; 2 — Gmail SMTP + App Password</h4>
+      <p>App Passwords are disabled on many Google Workspace / managed accounts. No workaround.</p>
+    </div>
+    <div class="attempt win" style="margin-top:8px">
+      <h4>✅ Attempt 3 — Resend API</h4>
+      <p>Free tier, 100 emails/day, one API key, no domain verification needed to start. One HTTP POST.</p>
+    </div>
+    <div class="attempt fail" style="margin-top:8px">
+      <h4>⚠️ Gotcha: Cloudflare 403 error 1010</h4>
+      <p>Resend's API blocked the request from Vercel. Fix: add a <code>User-Agent</code> header to the request.</p>
+    </div>
+  </div>
+
+  <!-- 7. VERCEL PROBLEM -->
+  <div class="slide slide-warn">
+    <h3>lesson 3: deployment has gotchas</h3>
+    <h2>Vercel tried to be too clever.</h2>
+    <ul class="list" style="max-width:700px">
+      <li><span class="icon red">✗</span><span>Had a <code>requirements.txt</code> → Vercel ran <code>uv lock</code> → failed looking for <code>pyproject.toml</code></span></li>
+      <li><span class="icon green">✓</span><span>Fix: delete <code>requirements.txt</code> (we have zero dependencies anyway)</span></li>
+      <li><span class="icon red">✗</span><span>Vercel then looked for <code>app.py</code> / <code>main.py</code> web entrypoints → "No python entrypoint found"</span></li>
+      <li><span class="icon green">✓</span><span>Fix: add <code>"framework": null</code> to <code>vercel.json</code> to opt out of framework detection</span></li>
+    </ul>
+  </div>
+
+  <!-- 8. SECURITY -->
+  <div class="slide slide-dark">
+    <h3>lesson 4: security from day 1</h3>
+    <h2>Never commit secrets.<br/>Not even once.</h2>
+    <pre>
+# ❌ never do this
+EMAIL_TO = "you@gmail.com"
+API_KEY  = "re_abc123"
+
+# ✅ always do this
+EMAIL_TO = os.environ.get("EMAIL_TO", "")
+API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
+    <p style="margin-top:20px; font-size:0.95rem">Git history is public even after a force-push. If a secret lands in a commit, rotate it immediately.</p>
+  </div>
+
+  <!-- 9. WHAT WORKED -->
+  <div class="slide slide-accent">
+    <h3>what worked</h3>
+    <h2>The full working pipeline.</h2>
+    <ul class="list">
+      <li><span class="icon green">✓</span><span>Yahoo Finance API — free, no auth, reliable stock data</span></li>
+      <li><span class="icon green">✓</span><span>TLDR RSS feeds + NPR RSS — standard XML, parse perfectly</span></li>
+      <li><span class="icon green">✓</span><span>Beehiiv web scrape — Remix JSON in page source = easy extraction</span></li>
+      <li><span class="icon green">✓</span><span>Resend API with User-Agent header — clean HTTP POST, no SMTP drama</span></li>
+      <li><span class="icon green">✓</span><span>Vercel serverless + GitHub auto-deploy — push to main = live in 30s</span></li>
+    </ul>
+  </div>
+
+  <!-- 10. HOW TO START -->
+  <div class="slide slide-dark">
+    <h3>how to start vibe coding</h3>
+    <h2>The only rule:<br/>describe the outcome, not the code.</h2>
+    <div class="two-col" style="margin-top:8px">
+      <div class="col">
+        <h4 class="red">❌ Bad prompt</h4>
+        <p>"Write a Python function that uses smtplib to send an email using MIME multipart"</p>
+      </div>
+      <div class="col">
+        <h4 class="green">✅ Good prompt</h4>
+        <p>"Send an HTML email to my Gmail every morning with today's top AI news — no extra libraries"</p>
+      </div>
+    </div>
+    <p style="margin-top:28px">When something breaks, describe what you see. The agent fixes it. Repeat.</p>
+  </div>
+
+  <!-- 11. END -->
+  <div class="slide slide-hero">
+    <h1 style="font-size:2.5rem">Build something <span class="green">you actually use</span>.</h1>
+    <p style="margin-top:20px; font-size:1.2rem">The best project is one that runs every morning<br/>and you never have to think about again.</p>
+    <div style="margin-top:40px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center">
+      <span class="tag" style="font-size:1rem; padding: 8px 16px">github.com/anushav3/daily-brief-app</span>
+      <span class="tag" style="font-size:1rem; padding: 8px 16px">daily-brief-app.vercel.app</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- nav controls -->
+<div class="nav">
+  <button onclick="prev()">← prev</button>
+  <span class="counter" id="counter">1 / 11</span>
+  <button onclick="next()">next →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + total) % total;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = `${cur + 1} / ${total}`;
+    document.getElementById('progress').style.width = `${((cur + 1) / total) * 100}%`;
+  }
+
+  function next() { show(cur + 1); }
+  function prev() { show(cur - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') next();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') prev();
+  });
+</script>
+</body>
+</html>
