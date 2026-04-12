@@ -128,6 +128,46 @@ vercel --yes        # links repo, auto-deploys on every push
 
 ---
 
+## Use this yourself
+
+Anyone can fork this repo and have their own daily brief running in under 10 minutes.
+
+**1. Fork & clone**
+```bash
+# Fork on GitHub, then:
+git clone https://github.com/<your-username>/daily-brief-app
+cd daily-brief-app
+```
+
+**2. Get a Resend API key**
+- Sign up free at [resend.com](https://resend.com) (100 emails/day free)
+- Dashboard → API Keys → Create key
+
+**3. Run locally**
+```bash
+export EMAIL_TO='you@gmail.com'
+export RESEND_API_KEY='re_xxxxxxxxxxxx'
+python3 daily_brief_email.py
+```
+No `pip install` needed — stdlib only.
+
+**4. Deploy to Vercel**
+```bash
+npm install -g vercel
+vercel --yes
+```
+Then add `EMAIL_TO` and `RESEND_API_KEY` in the Vercel dashboard under Environment Variables and redeploy.
+
+**5. Whitelist the sender in Gmail**
+The first email will go to spam. Add `onboarding@resend.dev` to your Gmail contacts (e.g. as "Daily Brief") and future emails go straight to inbox.
+
+**6. Customise**
+- Change tickers: edit `STOCKS` in `daily_brief_email.py`
+- Add/remove feeds: edit `NEWS_FEEDS`
+- Change the design: edit `branding-guidelines.md`
+
+---
+
 ## Key lessons
 
 | Lesson | Detail |
