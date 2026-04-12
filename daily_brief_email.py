@@ -608,6 +608,7 @@ def send_email(html: str, subject: str, api_key: str) -> None:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type":  "application/json",
+            "User-Agent":    "Mozilla/5.0 (compatible; DailyBrief/1.0)",
         },
         method="POST",
     )
