@@ -4,3 +4,4 @@ __pycache__/
 .env*
 daily_brief_preview.html
 .DS_Store
+.vercel/
