@@ -104,47 +104,66 @@ def fmt_price(v: float | None) -> str:
 
 
 def fetch_npr_up_first() -> list[dict] | None:
-    """Fetch the top 3 stories from the latest NPR Up First episode"""
+    """Fetch the top 3 stories from the latest Mon–Sat NPR Up First episode (skips Sunday)"""
     rss_url = "https://www.npr.org/rss/podcast.php?id=510318"
     content = fetch_url(rss_url)
     if not content:
         return None
-    
-    # Parse RSS to get the latest episode
-    items = parse_rss(content, 1)  # Get only the latest episode
+
+    # Parse RSS to get several recent episodes so we can skip Sunday
+    items = parse_rss(content, 7)
     if not items:
         return None
-    
-    latest_episode = items[0]
-    # For NPR, get the full description without truncation
+
+    # Find the most recent non-Sunday episode
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+
     try:
-        import xml.etree.ElementTree as ET
         root = ET.fromstring(content)
-        ns = {
-            'content': 'http://purl.org/rss/1.0/modules/content/',
-        }
-        item_elements = root.findall(".//item")
-        if item_elements:
-            # Get content:encoded for full description
-            desc_elem = item_elements[0].find("content:encoded", ns)
-            if desc_elem is not None and desc_elem.text:
-                description = strip_html(desc_elem.text)
-            else:
-                description = latest_episode.get("desc", "")
-        else:
-            description = latest_episode.get("desc", "")
-    except:
+    except Exception:
+        root = None
+
+    ns = {'content': 'http://purl.org/rss/1.0/modules/content/'}
+
+    item_elements = root.findall(".//item") if root is not None else []
+
+    def pub_weekday(date_str):
+        """Return weekday int (0=Mon … 6=Sun) or None if unparseable."""
+        if not date_str:
+            return None
+        try:
+            return parsedate_to_datetime(date_str).weekday()
+        except Exception:
+            return None
+
+    latest_episode = None
+    latest_elem = None
+    for ep, elem in zip(items, item_elements):
+        wd = pub_weekday(ep.get("date", ""))
+        if wd != 6:  # 6 = Sunday → skip
+            latest_episode = ep
+            latest_elem = elem
+            break
+
+    # Fall back to first item if all recent episodes are Sunday (unlikely)
+    if latest_episode is None:
+        latest_episode = items[0]
+        latest_elem = item_elements[0] if item_elements else None
+
+    # Get full description from content:encoded if available
+    description = ""
+    if latest_elem is not None:
+        desc_elem = latest_elem.find("content:encoded", ns)
+        if desc_elem is not None and desc_elem.text:
+            description = strip_html(desc_elem.text)
+    if not description:
         description = latest_episode.get("desc", "")
-    
-    # Extract the 3 key stories from the description
-    # The description contains sentences separated by periods
-    # Split by '. ' to avoid splitting on abbreviations like "W."
+
+    # Extract up to 3 key story sentences
     sentences = [s.strip() for s in re.split(r'\.\s+', description) if s.strip() and len(s.strip()) > 10]
-    
-    # Take up to 3 sentences as the key stories
     key_stories = sentences[:3]
-    
-    # Build news items
+
     articles = []
     for story in key_stories:
         articles.append({
@@ -153,7 +172,7 @@ def fetch_npr_up_first() -> list[dict] | None:
             "desc": "",
             "date": latest_episode.get("date", datetime.now(timezone.utc).isoformat())
         })
-    
+
     return articles
 
 
@@ -343,7 +362,7 @@ def parse_rss(content: str | None, limit: int = 4) -> list[dict]:
 
             link = safe_text("link", "rss:link", "{http://purl.org/rss/1.0/}link")
             desc = safe_text("description", "rss:description", "{http://purl.org/rss/1.0/}description", "content:encoded")
-            desc = strip_html(desc)[:250] if desc else ""
+            desc = strip_html(desc)[:600] if desc else ""
 
             date = safe_text("pubDate", "rss:pubDate", "{http://purl.org/rss/1.0/}pubDate", "dc:date")
 
@@ -480,12 +499,14 @@ def build_email_html(stocks_rows: list[dict], news_sections: list[tuple]) -> str
                     # Extract first sentence/line from description
                     desc = item.get("desc", "").strip()
                     if desc:
-                        # Get first sentence (up to first period, question mark, or exclamation mark)
-                        first_sentence = desc.split('.')[0].split('?')[0].split('!')[0].strip()
-                        if len(first_sentence) > 120:  # If too long, truncate
-                            first_sentence = first_sentence[:117] + "..."
-                        elif not first_sentence.endswith(('.', '!', '?')):
-                            first_sentence = first_sentence + "."
+                        # Get up to 3 sentences from the description
+                        sentences = re.split(r'(?<=[.!?])\s+', desc)
+                        summary = " ".join(s.strip() for s in sentences[:3] if s.strip())
+                        if len(summary) > 400:
+                            summary = summary[:397] + "..."
+                        elif summary and not summary.endswith(('.', '!', '?')):
+                            summary += "."
+                        first_sentence = summary
                     else:
                         first_sentence = ""
 
