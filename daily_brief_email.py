@@ -629,6 +629,33 @@ def send_email(html: str, subject: str, api_key: str) -> None:
 # ──────────────────────────────────────────────
 #  MAIN
 # ──────────────────────────────────────────────
+def fetch_brief_data() -> str:
+    """Fetch all data and return rendered HTML — shared by main() and the preview endpoint."""
+    stocks_rows = []
+    for sym, name in STOCKS:
+        data = fetch_stock(sym)
+        stocks_rows.append({
+            "sym": sym, "name": name,
+            "price": data["price"]   if data else None,
+            "day":   data["day"]     if data else None,
+            "month": data["month"]   if data else None,
+            "private": False,
+        })
+
+    news_sections = []
+    for section_name, rss_url, limit in NEWS_FEEDS:
+        if section_name == "🌍 Up First (NPR)":
+            items = fetch_npr_up_first() or []
+        elif section_name == "📡 AI Daily Brief":
+            items = fetch_ai_daily_brief() or []
+        else:
+            content = fetch_url(rss_url)
+            items = parse_rss(content, limit)
+        news_sections.append((section_name, items))
+
+    return build_email_html(stocks_rows, news_sections)
+
+
 def main() -> None:
     print(f"\n{'='*55}")
     print(f"  Daily Brief  —  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
@@ -660,8 +687,7 @@ def main() -> None:
     news_sections = []
     for section_name, rss_url, limit in NEWS_FEEDS:
         print(f"   {section_name}…", end=" ", flush=True)
-        
-        # Special handling for sections that need web scraping
+
         if section_name == "🌍 Up First (NPR)":
             items = fetch_npr_up_first() or []
         elif section_name == "📡 AI Daily Brief":
@@ -669,7 +695,7 @@ def main() -> None:
         else:
             content = fetch_url(rss_url)
             items = parse_rss(content, limit)
-        
+
         print(f"{len(items)} articles")
         news_sections.append((section_name, items))
 
