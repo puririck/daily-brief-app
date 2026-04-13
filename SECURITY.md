@@ -6,11 +6,15 @@ This document covers the security model for the Daily Brief agentic app and the 
 
 ## Secrets management
 
-| What | Rule |
-|------|------|
-| Gmail App Password | Always via `GMAIL_APP_PASSWORD` env var — never hardcoded |
-| Email addresses | Always via `EMAIL_TO` / `EMAIL_FROM` env vars — never hardcoded |
-| Any new credential | Same pattern: `os.environ.get("VAR_NAME", "")` |
+| What | Env var | Rule |
+|------|---------|------|
+| Recipient email | `EMAIL_TO` | Never hardcoded |
+| Sender email | `EMAIL_FROM` | Never hardcoded |
+| Resend API key | `RESEND_API_KEY` | Never hardcoded |
+| Vercel cron auth | `CRON_SECRET` | Auto-injected by Vercel; verified in `api/send_brief.py` |
+| Upstash Redis URL | `UPSTASH_REDIS_REST_URL` | Never hardcoded |
+| Upstash Redis token | `UPSTASH_REDIS_REST_TOKEN` | Never hardcoded |
+| Any new credential | — | Same pattern: `os.environ.get("VAR_NAME", "")` |
 
 **Never commit secrets.** The `.gitignore` excludes `.env*` files. If you add a `.env` file locally for convenience, confirm it is gitignored before every commit.
 
@@ -39,6 +43,14 @@ For persistent setup without committing secrets, add the exports to `~/.zshrc` o
 
 ---
 
+## DOS protection — /brief endpoint
+
+The `/brief` page (`api/brief.py`) is rate-limited to **10 requests/day** per calendar day (UTC) using Upstash Redis:
+- Atomic `INCR` on key `brief:count:YYYY-MM-DD` → returns 429 after 10 hits
+- Key TTL set to 86400s on first hit — auto-resets at next midnight, no cleanup needed
+- **Fails open** if Upstash env vars are missing — never block on Redis errors
+- Do not raise the limit without considering Vercel free tier invocation costs
+
 ## External fetch surface
 
 The script fetches from these external URLs at runtime:
@@ -47,9 +59,10 @@ The script fetches from these external URLs at runtime:
 |-------------|------|
 | `tldr.tech` RSS feeds | AI, infosec, startups, product news |
 | `aidailybrief.beehiiv.com` | AI Daily Brief (HTML scrape) |
-| `npr.org` RSS | Up First podcast feed |
-| `query1.finance.yahoo.com` | Stock chart data |
-| `smtp.gmail.com:465` | Outbound email delivery |
+| `npr.org` RSS | Up First podcast feed (Mon–Sat only) |
+| `query1.finance.yahoo.com` | Stock chart data (S&P 500, Nasdaq 100, VTSAX + cybersecurity tickers) |
+| `api.resend.com` | Outbound notification email |
+| `upstash.io` | Redis REST API for rate limiting |
 
 **Rules:**
 - All fetches use a read-only `GET` with a generic `User-Agent`. No credentials are sent to any of these endpoints.

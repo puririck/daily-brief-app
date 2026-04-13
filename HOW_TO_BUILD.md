@@ -107,6 +107,9 @@ Content-Type: application/json
 **Problem hit 2:** First email landed in Gmail spam — `onboarding@resend.dev` is an unknown sender
 **Fix:** Add `onboarding@resend.dev` to Gmail contacts (saved as "Anusha's Daily Brief") — Gmail trusts contacts and all future emails go straight to inbox
 
+### Final approach — notification email + web link ✅
+Rather than sending the full HTML email, the cron now sends a short notification with a **"Read Today's Brief →"** button linking to `https://daily-brief-app.vercel.app/brief`. The full brief renders in the browser on demand. This keeps email size tiny and avoids email client rendering quirks.
+
 ---
 
 ## Step 3: Hosting & Scheduling
@@ -129,6 +132,21 @@ Created `api/send_brief.py` — a Python handler Vercel picks up automatically f
 3. Cron jobs (`vercel.json` `crons` field) require Vercel Pro for weekday-only schedules (`1-5`)
 
 **Security:** Vercel injects a `CRON_SECRET` env var and sends it as `Authorization: Bearer` on cron requests — handler verifies this to block unauthorized triggers.
+
+### DOS protection for /brief endpoint
+The `/brief` page is publicly accessible — anyone with the URL could hammer it and burn through Vercel free tier invocations. Fix: rate limit using **Upstash Redis** (free tier, REST API, no pip install needed).
+
+```python
+# api/brief.py — increments a daily counter via Upstash REST API
+key = f"brief:count:{today}"   # e.g. "brief:count:2026-04-13"
+count = upstash_incr(key)       # atomic increment
+if count == 1: upstash_expire(key, 86400)  # auto-reset at midnight
+if count > 10: return 429
+```
+
+- Counter key auto-expires after 24 hours — no cleanup needed
+- Fails open (allows through) if Upstash is not configured — never blocks on Redis errors
+- Required env vars: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (from upstash.com, free)
 
 ### Option 3 — GitHub Actions ✅ (free cron alternative)
 Full cron syntax, free on public repos, run history in the Actions tab. Good fallback if Vercel crons need Pro.
@@ -164,13 +182,16 @@ vercel --yes        # links repo, auto-deploys on every push
 
 ---
 
-## Environment Variables (all three required to send)
+## Environment Variables
 
-| Variable | Where to get it |
-|----------|----------------|
-| `EMAIL_TO` | Your email address |
-| `RESEND_API_KEY` | resend.com → API Keys |
-| `EMAIL_FROM` | Verified sender in Resend (or leave unset to use `onboarding@resend.dev`) |
+| Variable | Required | Where to get it |
+|----------|----------|----------------|
+| `EMAIL_TO` | ✅ | Your email address |
+| `RESEND_API_KEY` | ✅ | resend.com → API Keys |
+| `EMAIL_FROM` | Optional | Verified sender in Resend (defaults to `onboarding@resend.dev`) |
+| `CRON_SECRET` | ✅ | Auto-injected by Vercel — verify in `api/send_brief.py` |
+| `UPSTASH_REDIS_REST_URL` | ✅ for /brief | upstash.com → database → REST API tab |
+| `UPSTASH_REDIS_REST_TOKEN` | ✅ for /brief | upstash.com → database → REST API tab |
 
 ---
 

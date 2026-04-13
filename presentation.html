@@ -91,11 +91,12 @@
     <h3>the app</h3>
     <h2>One script. Every morning.</h2>
     <ul class="list">
-      <li><span class="icon">📈</span><span>Fetches live stock prices for 5 cybersecurity tickers from Yahoo Finance</span></li>
+      <li><span class="icon">📈</span><span>Fetches live stock prices — S&amp;P 500, Nasdaq 100, VTSAX + 5 cybersecurity tickers from Yahoo Finance</span></li>
       <li><span class="icon">📰</span><span>Pulls headlines from TLDR AI, TLDR Infosec, TLDR Startups, TLDR Product</span></li>
       <li><span class="icon">🤖</span><span>Scrapes the latest AI Daily Brief post from beehiiv</span></li>
-      <li><span class="icon">🌍</span><span>Grabs NPR Up First stories from RSS</span></li>
-      <li><span class="icon">✉️</span><span>Builds a dark-theme HTML email and sends it via API</span></li>
+      <li><span class="icon">🌍</span><span>Grabs NPR Up First stories from RSS (Mon–Sat, skips Sunday)</span></li>
+      <li><span class="icon">✉️</span><span>Sends a short notification email with a link → opens full brief in browser</span></li>
+      <li><span class="icon">🔒</span><span>Live brief at <code>daily-brief-app.vercel.app/brief</code> — rate limited to 10 views/day via Upstash Redis</span></li>
     </ul>
   </div>
 
@@ -109,8 +110,9 @@
         <li>Python (no extra packages — see right)</li>
         <li>VSCode (code editor)</li>
         <li>Google Drive (local file storage + backup)</li>
-        <li>Vercel (serverless hosting)</li>
-        <li>Resend (email API)</li>
+        <li>Vercel (serverless hosting + cron)</li>
+        <li>Resend (notification email API)</li>
+        <li>Upstash Redis (rate limiting — 10 req/day)</li>
         <li>GitHub (source + auto-deploy)</li>
         <li>Claude Code (coding agent)</li>
       </div>
@@ -215,7 +217,20 @@ API_KEY  = "re_abc123"
 # ✅ always do this
 EMAIL_TO = os.environ.get("EMAIL_TO", "")
 API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
-    <p style="margin-top:20px; font-size:0.95rem">Git history is public even after a force-push. If a secret lands in a commit, rotate it immediately.</p>
+    <p style="margin-top:16px; font-size:0.95rem">Git history is public even after a force-push. If a secret lands in a commit, rotate it immediately.</p>
+    <div class="two-col" style="margin-top:16px; max-width:760px;">
+      <div class="col">
+        <h4 class="yellow">DOS protection</h4>
+        <p style="font-size:0.9rem">The <code>/brief</code> endpoint on Vercel's free tier is rate-limited to <strong>10 requests/day</strong> using Upstash Redis. Counter auto-resets at midnight UTC. Returns <code>429</code> when exceeded.</p>
+      </div>
+      <div class="col">
+        <h4 class="green">Env vars in use</h4>
+        <li style="font-size:0.85rem"><code>EMAIL_TO</code> · <code>RESEND_API_KEY</code></li>
+        <li style="font-size:0.85rem"><code>CRON_SECRET</code> — blocks unauthorized cron triggers</li>
+        <li style="font-size:0.85rem"><code>UPSTASH_REDIS_REST_URL</code></li>
+        <li style="font-size:0.85rem"><code>UPSTASH_REDIS_REST_TOKEN</code></li>
+      </div>
+    </div>
   </div>
 
   <!-- 9. WHAT WORKED -->
@@ -363,17 +378,19 @@ API_KEY  = os.environ.get("RESEND_API_KEY", "")</pre>
       <div style="display:flex; align-items:flex-center; gap:6px;">
         <span style="color:#444; width:52px; font-size:10px; flex-shrink:0;">FETCH</span>
         <div style="display:flex; flex-direction:column; gap:4px;">
-          <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">Yahoo Finance · ZS PANW CRWD ANET NTSK</span>
+          <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">Yahoo Finance · S&amp;P500 · Nasdaq · VTSAX · ZS PANW CRWD ANET NTSK</span>
           <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">TLDR RSS · AI · Infosec · Startups · Product</span>
           <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">AI Daily Brief · beehiiv /archive scrape</span>
-          <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">NPR Up First · RSS feed</span>
+          <span style="background:#0d170d; border:1px solid #14532d; border-radius:4px; padding:4px 10px; color:#86efac;">NPR Up First · RSS feed (Mon–Sat)</span>
         </div>
         <span style="color:#333; font-size:20px; align-self:center;">→</span>
         <span style="background:#17100d; border:1px solid #92400e; border-radius:4px; padding:5px 14px; color:#fdba74; align-self:center;">HTML<br/>Builder</span>
         <span style="color:#333; font-size:20px; align-self:center;">→</span>
-        <span style="background:#170d17; border:1px solid #6b21a8; border-radius:4px; padding:5px 10px; color:#d8b4fe; align-self:center;">Resend API</span>
-        <span style="color:#333; font-size:20px; align-self:center;">→</span>
-        <span style="background:#0d1717; border:1px solid #134e4a; border-radius:4px; padding:5px 10px; color:#99f6e4; align-self:center;">Gmail Inbox</span>
+        <div style="display:flex; flex-direction:column; gap:4px; align-self:center;">
+          <span style="background:#170d17; border:1px solid #6b21a8; border-radius:4px; padding:4px 10px; color:#d8b4fe;">Resend → notification email</span>
+          <span style="background:#170d0d; border:1px solid #6b21a8; border-radius:4px; padding:4px 10px; color:#d8b4fe;">/brief → full HTML (rate limited)</span>
+          <span style="background:#0d1717; border:1px solid #164e63; border-radius:4px; padding:4px 10px; color:#99f6e4;">Upstash Redis · 10 req/day</span>
+        </div>
       </div>
 
     </div>
