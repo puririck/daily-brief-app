@@ -36,6 +36,11 @@ STOCKS = [
     ("^GSPC", "S&P 500"),
     ("^NDX",  "Nasdaq 100"),
     ("VTSAX", "VTSAX"),
+    ("ZS",    "Zscaler"),
+    ("PANW",  "Palo Alto"),
+    ("CRWD",  "CrowdStrike"),
+    ("ANET",  "Arista"),
+    ("NTSK",  "Netskope"),
 ]
 
 NEWS_FEEDS = [
@@ -241,8 +246,8 @@ def fetch_ai_daily_brief() -> list[dict] | None:
     return articles or [{"title": title, "link": post_url, "desc": "", "date": pub_date_str}]
 
 
-def fetch_tldr_articles(url: str, headline_phrases: list[str]) -> list[tuple[str, str]] | None:
-    """Fetch TLDR daily digest and extract summaries for specific headline phrases"""
+def fetch_tldr_articles(url: str, _phrases: list[str], limit: int = 3) -> list[tuple[str, str]] | None:
+    """Fetch TLDR daily digest and return top headline+summary pairs in order."""
     try:
         req = urllib.request.Request(
             url,
@@ -253,41 +258,27 @@ def fetch_tldr_articles(url: str, headline_phrases: list[str]) -> list[tuple[str
         ctx.verify_mode = ssl.CERT_NONE
         with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
             html_content = resp.read().decode("utf-8", errors="replace")
-        
-        # Extract articles from sections with their structured summaries
-        # Pattern matches: <h3>headline</h3></a><div class="newsletter-html">summary</div>
-        article_pattern = r'<h3>([^<]+)</h3>\s*</a>\s*<div class="newsletter-html">([^<]*(?:<[^/][^>]*>[^<]*)*?)</div>'
+
+        # Extract headline + summary pairs directly from page order
+        article_pattern = r'<h3>([^<]+)</h3>\s*</a>\s*<div class="newsletter-html">(.*?)</div>'
         matches = re.findall(article_pattern, html_content, re.DOTALL)
-        
-        if matches:
-            articles = []
-            for phrase in headline_phrases[:3]:  # Limit to 3 phrases
-                phrase_lower = phrase.lower().strip()
-                # Find matching article by comparing headline keywords
-                for headline, summary in matches:
-                    headline_lower = headline.lower()
-                    # Check if key words from phrase are in headline
-                    words = [w for w in phrase_lower.split() if len(w) > 3]
-                    if any(word in headline_lower for word in words[:2]):  # Match first 2 content words
-                        # Skip sponsor articles
-                        if 'Sponsor' not in headline and 'sponsor' not in summary.lower():
-                            # Clean up HTML tags and entities
-                            summary_clean = re.sub(r'<[^>]+>', '', summary).strip()
-                            summary_clean = re.sub(r'&[a-z]+;', '', summary_clean).strip()
-                            
-                            # Get first sentence
-                            sentences = re.split(r'[.!?]+', summary_clean)
-                            first_sentence = sentences[0].strip() if sentences and sentences[0].strip() else None
-                            
-                            if first_sentence and len(first_sentence) > 5:
-                                articles.append((phrase, first_sentence + ('.' if not first_sentence.endswith('.') else '')))
-                                break
-            
-            return articles if articles else None
-        
-        return None
-    except Exception as e:
-        # Silently fail - fall back to title parsing
+
+        articles = []
+        for headline, summary in matches:
+            if 'sponsor' in headline.lower() or 'sponsor' in summary.lower():
+                continue
+            summary_clean = re.sub(r'<[^>]+>', '', summary).strip()
+            summary_clean = re.sub(r'&[a-z]+;', ' ', summary_clean).strip()
+            # Take up to 2 sentences
+            sentences = re.split(r'(?<=[.!?])\s+', summary_clean)
+            desc = " ".join(s.strip() for s in sentences[:2] if s.strip())
+            if headline.strip() and desc:
+                articles.append((headline.strip(), desc))
+            if len(articles) >= limit:
+                break
+
+        return articles if articles else None
+    except Exception:
         return None
 
 
@@ -434,35 +425,49 @@ _HTML_STYLE = load_branding_css()
 def build_email_html(stocks_rows: list[dict], news_sections: list[tuple]) -> str:
     today = datetime.now().strftime("%A, %B %d, %Y")
 
-    # ── stock ticker ──
-    stock_ticker_html = '<div class="stock-ticker">'
-    for i, row in enumerate(stocks_rows):
-        sym = row["sym"]
-        price_html = fmt_price(row.get("price"))
-        day_str, day_up = fmt_pct(row.get("day"))
-        month_str, month_up = fmt_pct(row.get("month"))
+    # ── stock ticker — two rows: indices on top, cybersecurity below ──
+    # Index tickers use display name; equity tickers use symbol
+    INDEX_SYMS = {"^GSPC", "^NDX", "VTSAX"}
 
-        if row.get("private"):
-            stock_ticker_html += (
-                f'<span class="stock-item">'
-                f'<span class="stock-top"><span class="stock-symbol">{sym}</span></span>'
-                f'<span class="stock-bot"><span class="pvt">PRIVATE</span></span>'
-                f'</span>'
-            )
-        else:
-            day_class = "positive" if day_up else ("negative" if day_str != "N/A" else "")
-            month_class = "positive" if month_up else ("negative" if month_str != "N/A" else "")
-            stock_ticker_html += (
-                f'<span class="stock-item">'
-                f'<span class="stock-top"><span class="stock-symbol">{sym}</span><span class="stock-price">{price_html}</span></span>'
-                f'<span class="stock-bot"><span class="stock-change-label">1d</span><span class="stock-change {day_class}">{day_str}</span><span class="stock-sep-inner">·</span><span class="stock-change-label">1m</span><span class="stock-change {month_class}">{month_str}</span></span>'
-                f'</span>'
-            )
+    def render_ticker_row(rows):
+        html = ""
+        for i, row in enumerate(rows):
+            sym = row["sym"]
+            name = row.get("name", sym)
+            label = name if sym in INDEX_SYMS else sym
+            price_html = fmt_price(row.get("price"))
+            day_str, day_up = fmt_pct(row.get("day"))
+            month_str, month_up = fmt_pct(row.get("month"))
 
-        if i < len(stocks_rows) - 1:
-            stock_ticker_html += '<span class="stock-sep">|</span>'
+            if row.get("private"):
+                html += (
+                    f'<span class="stock-item">'
+                    f'<span class="stock-top"><span class="stock-symbol">{label}</span></span>'
+                    f'<span class="stock-bot"><span class="pvt">PRIVATE</span></span>'
+                    f'</span>'
+                )
+            else:
+                day_class = "positive" if day_up else ("negative" if day_str != "N/A" else "")
+                month_class = "positive" if month_up else ("negative" if month_str != "N/A" else "")
+                html += (
+                    f'<span class="stock-item">'
+                    f'<span class="stock-top"><span class="stock-symbol">{label}</span><span class="stock-price">{price_html}</span></span>'
+                    f'<span class="stock-bot"><span class="stock-change-label">1d</span><span class="stock-change {day_class}">{day_str}</span><span class="stock-sep-inner">·</span><span class="stock-change-label">1m</span><span class="stock-change {month_class}">{month_str}</span></span>'
+                    f'</span>'
+                )
+            if i < len(rows) - 1:
+                html += '<span class="stock-sep">|</span>'
+        return html
 
-    stock_ticker_html += '</div>'
+    indices = [r for r in stocks_rows if r["sym"] in INDEX_SYMS]
+    equities = [r for r in stocks_rows if r["sym"] not in INDEX_SYMS]
+
+    stock_ticker_html = (
+        '<div class="stock-ticker-wrap">'
+        f'<div class="stock-ticker">{render_ticker_row(indices)}</div>'
+        f'<div class="stock-ticker">{render_ticker_row(equities)}</div>'
+        '</div>'
+    )
 
     # ── news sections ──
     news_html = ""
@@ -511,35 +516,19 @@ def build_email_html(stocks_rows: list[dict], news_sections: list[tuple]) -> str
                     # For TLDR feeds, fetch individual articles with summaries
                     is_tldr = 'tldr.tech' in item.get('link', '')
                     if is_tldr:
-                        # Extract headline phrases from the title (e.g., "OpenAI $100 plan, Claude Cowork, Perplexity x Plaid")
-                        full_title = item['title']
-                        # Remove date prefix (e.g., "TLDR AI 2026-04-10")
-                        clean_title = re.sub(r'^TLDR\s+\w+\s+\d{4}-\d{2}-\d{2}', '', full_title).strip()
-                        
-                        # Split by comma to get headline phrases
-                        phrases = [p.strip() for p in clean_title.split(',') if p.strip()]
-                        
-                        # Add the top headline linked to the feed
-                        html += f"""
-                    <div class="news-item">
-                      <h4 class="news-title"><a href="{item['link']}" target="_blank" rel="noopener">{full_title}</a></h4>
-                    </div>"""
-                        
-                        # Try to fetch summaries for these specific phrases
-                        articles = fetch_tldr_articles(item['link'], phrases)
-                        if articles and len(articles) > 0:
-                            # Create news items - one for each headline phrase with summary
+                        articles = fetch_tldr_articles(item['link'], [], limit=3)
+                        if articles:
                             for article_headline, article_summary in articles:
                                 html += f"""
                     <div class="news-item">
                       <h4 class="news-title">{article_headline}</h4>
                       <div class="news-sub">{article_summary}</div>
                     </div>"""
-                            continue  # Skip the single item below
-                        
-                        # Fallback for TLDR feeds - display the 3 headline phrases without summaries
-                        for phrase in phrases[:3]:  # Limit to 3 phrases max
-                            html += f"""
+                        else:
+                            # Fallback: show RSS title phrases without summaries
+                            clean_title = re.sub(r'^TLDR\s+\w+\s+\d{4}-\d{2}-\d{2}', '', item['title']).strip()
+                            for phrase in [p.strip() for p in clean_title.split(',') if p.strip()][:3]:
+                                html += f"""
                     <div class="news-item">
                       <h4 class="news-title">{phrase}</h4>
                     </div>"""

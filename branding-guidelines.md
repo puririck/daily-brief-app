@@ -52,12 +52,20 @@ body {
 
 
 /* Stock ticker - single-line professional ticker style */
+.stock-ticker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
 .stock-ticker {
   background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
   border: 2px solid #333333;
+  justify-content: center;
   border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
+  padding: 6px 8px;
+  margin-bottom: 0;
   font-family: 'Courier New', monospace;
   display: flex;
   flex-wrap: nowrap;
@@ -88,26 +96,26 @@ body {
 .stock-symbol {
   font-weight: bold;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 11px;
   text-shadow: 0 0 5px rgba(255,255,255,0.5);
   font-family: 'Courier New', monospace;
 }
 
 .stock-price {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
 
 .stock-change-label {
   color: #aaaaaa;
-  font-size: 11px;
+  font-size: 9px;
   font-family: 'Courier New', monospace;
 }
 
 .stock-change {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
@@ -124,7 +132,7 @@ body {
 
 .stock-sep {
   color: #555555;
-  margin: 0 8px;
+  margin: 0 5px;
   font-family: 'Courier New', monospace;
   flex-shrink: 0;
 }
