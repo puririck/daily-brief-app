@@ -33,9 +33,13 @@ EMAIL_FROM    = os.environ.get("EMAIL_FROM", "Daily Brief <onboarding@resend.dev
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 STOCKS = [
+    # Row 1 — indices + big tech
     ("^GSPC", "S&P 500"),
     ("^NDX",  "Nasdaq 100"),
     ("VTSAX", "VTSAX"),
+    ("NVDA",  "Nvidia"),
+    ("MSFT",  "Microsoft"),
+    # Row 2 — cybersecurity
     ("ZS",    "Zscaler"),
     ("PANW",  "Palo Alto"),
     ("CRWD",  "CrowdStrike"),
@@ -431,14 +435,16 @@ def build_email_html(stocks_rows: list[dict], news_sections: list[tuple]) -> str
 
     # ── stock ticker — two rows: indices on top, cybersecurity below ──
     # Index tickers use display name; equity tickers use symbol
-    INDEX_SYMS = {"^GSPC", "^NDX", "VTSAX"}
+    # Row 1: indices use display names; equities use symbols
+    INDEX_SYMS   = {"^GSPC", "^NDX", "VTSAX", "NVDA", "MSFT"}
+    DISPLAY_NAME = {"^GSPC", "^NDX", "VTSAX"}  # only these get full names
 
     def render_ticker_row(rows):
         html = ""
         for i, row in enumerate(rows):
             sym = row["sym"]
             name = row.get("name", sym)
-            label = name if sym in INDEX_SYMS else sym
+            label = name if sym in DISPLAY_NAME else sym
             price_html = fmt_price(row.get("price"))
             day_str, day_up = fmt_pct(row.get("day"))
             month_str, month_up = fmt_pct(row.get("month"))
