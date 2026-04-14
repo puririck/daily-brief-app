@@ -33,18 +33,28 @@ STOCKS = [
 NEWS_FEEDS = [
     {
         "title": "Venezuela and Oil News",
-        "url": "https://feeds.reuters.com/reuters/businessNews",
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
         "keywords": ["venezuela", "oil", "crude", "opec", "petroleum", "energy", "pdvsa"],
     },
     {
+        "title": "Venezuela and Oil News 2",
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+        "keywords": ["venezuela", "oil", "crude", "opec", "petroleum", "energy"],
+    },
+    {
         "title": "Tesla and EV News",
-        "url": "https://feeds.reuters.com/reuters/technologyNews",
+        "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
         "keywords": ["tesla", "musk", "electric vehicle", "ev"],
     },
     {
         "title": "Finance and Markets",
-        "url": "https://feeds.reuters.com/reuters/businessNews",
+        "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
         "keywords": ["market", "stock", "fed", "rate", "economy", "inflation", "gdp"],
+    },
+    {
+        "title": "Energy Markets",
+        "url": "https://finance.yahoo.com/news/rssindex",
+        "keywords": ["oil", "energy", "crude", "opec", "venezuela", "tesla"],
     },
 ]
 
