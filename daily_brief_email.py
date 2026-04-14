@@ -1,4 +1,3 @@
-
 name: Rakesh's Daily Brief
 
 on:
